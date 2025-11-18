@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>POS ร้านอาหารอีสาน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="app__header">
+      <div class="brand">
+        <div class="brand__logo" aria-hidden="true">🌶️</div>
+        <div class="brand__text">
+          <h1>ลาบยโส</h1>
+          <p>สด สะอาด อร่อย</p>
+        </div>
+      </div>
+
+      <div class="header__controls">
+        <div class="field">
+          <label>ใส่เลขโต๊ะ</label>
+          <input id="tableInput" type="text" placeholder="เลขโต๊ะ" />
+        </div>
+        <div class="field">
+          <label>กินที่ร้าน/กลับบ้าน</label>
+          <select id="orderType">
+            <option value="dine-in">กินที่ร้าน</option>
+            <option value="takeaway">สั่งกลับบ้าน</option>
+            <option value="delivery">เดลิเวอรี่</option>
+          </select>
+        </div>
+        <div class="search">
+          <input id="searchInput" type="search" placeholder="ค้นหาชื่อเมนู" />
+        </div>
+        <div class="actions">
+          <button id="addItemBtn" class="btn btn--primary" type="button">เพิ่มเมนู</button>
+          <button id="importBtn" class="btn btn--ghost" type="button" title="นำเข้ารายการจาก URL JSON">นำเข้า</button>
+          <button id="exportBtn" class="btn btn--ghost" type="button" title="ส่งออกรายการเป็นไฟล์ JSON">ส่งออก</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="app__main">
+      <section class="menu">
+        <div class="menu__tabs" role="tablist">
+          <button class="tab is-active" data-cat="all">ทั้งหมด</button>
+          <button class="tab" data-cat="somtam">ส้มตำ</button>
+          <button class="tab" data-cat="larb">ลาบ/ก้อย</button>
+          <button class="tab" data-cat="grill">ย่าง/ทอด</button>
+          <button class="tab" data-cat="soup">ต้ม/แกง</button>
+          <button class="tab" data-cat="drink">เครื่องดื่ม</button>
+          <button class="tab" data-cat="other">อื่นๆ</button>
+        </div>
+        <div id="menuGrid" class="menu__grid" aria-live="polite"></div>
+        <p id="emptyHint" class="hint" hidden>
+          ยังไม่มีเมนูในระบบ — กดปุ่ม <strong>เพิ่มเมนู</strong> หรือ <strong>นำเข้า</strong> จาก GitHub JSON
+        </p>
+      </section>
+
+      <aside class="cart">
+        <div class="cart__header">
+          <h2>🛒</h2>
+          <div class="cart__actions">
+            <button id="holdBtn" class="btn btn--ghost" title="พัก">พักบิล</button>
+            <button id="retrieveBtn" class="btn btn--ghost" title="ดึงบิล">ดึงบิล</button>
+            <button id="clearBtn" class="btn btn--ghost" title="ล้างตะกร้า">ลบ</button>
+          </div>
+        </div>
+
+        <ul id="cartList" class="cart__list"></ul>
+
+        <div class="cart__summary cart__summary--simple">
+            <div class="row row--total-big">
+                <span>ยอดรวม</span>
+                <strong id="subTotal">฿0.00</strong>
+            </div>
+
+            <div class="row row--cash">
+                <label for="cashInput">รับเงิน</label>
+                <input id="cashInput" type="number" min="0" step="0.01" placeholder="0.00" />
+            </div>
+
+            <div class="row row--change">
+                <span>เงินทอน</span>
+                <strong id="changeAmount">฿0.00</strong>
+            </div>
+        </div>
+
+
+        <div class="cart__footer">
+          <button id="payBtn" class="btn btn--primary">ชำระเงิน</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Add Item Modal -->
+  <div id="addModal" class="modal" aria-hidden="true">
+    <div class="modal__backdrop" id="addBackdrop"></div>
+    <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+      <header class="modal__header">
+        <h3 id="addTitle">เพิ่มเมนูใหม่</h3>
+        <button id="addClose" class="icon-btn" aria-label="ปิด">✕</button>
+      </header>
+      <form id="addForm" class="modal__body">
+        <div class="grid2">
+          <div class="field">
+            <label>ชื่อเมนู</label>
+            <input id="addName" type="text" required placeholder="เช่น ลาบหมู" />
+          </div>
+          <div class="field">
+            <label>ราคา (บาท)</label>
+            <input id="addPrice" type="number" min="0" step="1" required placeholder="เช่น 75" />
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>หมวด</label>
+            <select id="addCat" required>
+              <option value="somtam">ส้มตำ</option>
+              <option value="larb">ลาบ/ก้อย</option>
+              <option value="grill">ย่าง/ทอด</option>
+              <option value="soup">ต้ม/แกง</option>
+              <option value="drink">เครื่องดื่ม</option>
+              <option value="other">อื่นๆ</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>รูปภาพ (อัปโหลด)</label>
+            <input id="addImg" type="file" accept="image/*" />
+          </div>
+        </div>
+        <div class="field">
+          <label>หรือวาง URL รูป (เช่น GitHub/Drive)</label>
+          <input id="addImgUrl" type="url" placeholder="https://raw.githubusercontent.com/USER/REPO/branch/images/photo.webp" />
+        </div>
+        <div class="preview">
+          <img id="imgPreview" alt="ตัวอย่างรูป" />
+        </div>
+        <footer class="modal__footer">
+          <button type="button" class="btn btn--ghost" id="addCancel">ยกเลิก</button>
+          <button type="submit" class="btn btn--primary">บันทึกเมนู</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div id="importModal" class="modal" aria-hidden="true">
+    <div class="modal__backdrop" id="importBackdrop"></div>
+    <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+      <header class="modal__header">
+        <h3 id="importTitle">นำเข้ารายการจาก URL JSON</h3>
+        <button id="importClose" class="icon-btn" aria-label="ปิด">✕</button>
+      </header>
+      <div class="modal__body">
+        <div class="field">
+          <label>ลิงก์ไฟล์ JSON (เช่น raw.githubusercontent.com/.../menu.json)</label>
+          <input id="importUrl" type="url" placeholder="https://raw.githubusercontent.com/username/repo/main/menu.json" />
+        </div>
+        <p class="hint">รูปแบบ JSON: [{"id":"M01","name":"ลาบหมู","price":75,"cat":"larb","img":"https://.../lab.webp"}]</p>
+      </div>
+      <footer class="modal__footer">
+        <button class="btn btn--ghost" id="importCancel">ยกเลิก</button>
+        <button class="btn btn--primary" id="importSubmit">นำเข้า</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Receipt print area (hidden) -->
+  <iframe id="printFrame" style="display:none"></iframe>
+
+  <script src="app.js"></script>
+</body>
+</html>
