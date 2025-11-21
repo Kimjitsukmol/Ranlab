@@ -3,15 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>แซ่บอีหลี POS Pro (Ultimate UI + Fixed History)</title>
+    <title>แซ่บอีหลี POS Pro (Voice Enabled)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { font-family: 'Kanit', sans-serif; touch-action: manipulation; }
+        
+        /* Custom Scrollbar Styling */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         
+        /* Utility Classes for Mobile Scrolling */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .smooth-scroll { -webkit-overflow-scrolling: touch; }
+
         /* Animations */
         .animate-fade-in { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -32,20 +39,22 @@
 </head>
 <body class="bg-gray-50 h-screen flex flex-col overflow-hidden text-gray-800">
 
-    <!-- 1. Navbar (Responsive) -->
-    <nav class="bg-gradient-to-r from-red-700 to-red-800 text-white p-3 shadow-lg flex justify-between items-center z-30 shrink-0">
-        <div class="flex items-center gap-2 overflow-hidden">
+    <!-- 1. Navbar -->
+    <nav class="bg-gradient-to-r from-red-700 to-red-800 text-white p-3 shadow-lg flex justify-between items-center z-30 shrink-0 gap-3">
+        <div class="flex items-center gap-2 overflow-hidden shrink-0">
             <div class="bg-white text-red-700 p-1.5 rounded-full w-9 h-9 flex items-center justify-center font-bold shadow shrink-0">🌶️</div>
-            <h1 class="text-lg font-bold tracking-wide whitespace-nowrap truncate">แซ่บอีหลี POS</h1>
+            <h1 class="text-lg font-bold tracking-wide whitespace-nowrap truncate hidden sm:block">แซ่บอีหลี POS</h1>
+            <h1 class="text-lg font-bold tracking-wide whitespace-nowrap truncate sm:hidden">แซ่บอีหลี</h1>
         </div>
-        <div class="flex gap-2 overflow-x-auto no-scrollbar items-center">
-            <button onclick="openKitchenModal()" class="relative bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm transition border border-white/20 whitespace-nowrap">
+        
+        <div class="flex gap-2 overflow-x-auto hide-scrollbar smooth-scroll items-center flex-1 justify-end min-w-0">
+            <button onclick="openKitchenModal()" class="relative bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm transition border border-white/20 whitespace-nowrap shrink-0">
                 <i class="fas fa-concierge-bell"></i> <span class="hidden sm:inline">ครัว</span>
                 <span id="kitchenBadge" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-white hidden badge-pulse">0</span>
             </button>
-            <button onclick="openSalesModal()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm transition border border-white/20"><i class="fas fa-chart-line"></i></button>
-            <button onclick="openHistoryModal()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm transition border border-white/20"><i class="fas fa-history"></i></button>
-            <button onclick="openAddMenuModal()" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm shadow-lg font-bold whitespace-nowrap"><i class="fas fa-plus"></i> <span class="hidden sm:inline">เมนู</span></button>
+            <button onclick="openSalesModal()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm transition border border-white/20 shrink-0"><i class="fas fa-chart-line"></i></button>
+            <button onclick="openHistoryModal()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm transition border border-white/20 shrink-0"><i class="fas fa-history"></i></button>
+            <button onclick="openAddMenuModal()" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm shadow-lg font-bold whitespace-nowrap shrink-0"><i class="fas fa-plus"></i> <span class="hidden sm:inline">เมนู</span></button>
         </div>
     </nav>
 
@@ -53,13 +62,11 @@
     <div class="flex flex-1 overflow-hidden relative">
         
         <!-- Left: Menu Area -->
-        <div class="flex-1 flex flex-col bg-gray-50 h-full">
-            <!-- Category Bar (Sticky) -->
-            <div class="p-3 bg-white shadow-sm border-b flex gap-2 overflow-x-auto whitespace-nowrap z-10 shrink-0" id="categoryBar">
+        <div class="flex-1 flex flex-col bg-gray-50 h-full min-w-0">
+            <div class="p-3 bg-white shadow-sm border-b flex gap-2 overflow-x-auto whitespace-nowrap z-10 shrink-0 smooth-scroll hide-scrollbar" id="categoryBar">
                 <!-- Categories injected here -->
             </div>
 
-            <!-- Menu Grid (Scrollable) -->
             <div class="flex-1 overflow-y-auto p-4 pb-24 lg:pb-4 relative custom-scrollbar" id="menuContainer">
                 <div id="loadingMenu" class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-20 backdrop-blur-sm hidden">
                     <i class="fas fa-circle-notch fa-spin text-4xl text-red-500 mb-3"></i>
@@ -71,8 +78,7 @@
             </div>
         </div>
 
-        <!-- Right: Cart Area (Responsive Drawer) -->
-        <!-- Desktop: Side Panel / Mobile: Full Screen Overlay (Hidden by default on mobile) -->
+        <!-- Right: Cart Area -->
         <div id="cartPanel" class="hidden lg:flex flex-col w-full lg:w-[400px] bg-white shadow-2xl border-l border-gray-200 z-40 fixed inset-0 lg:static lg:h-auto animate-slide-up lg:animate-none">
             <!-- Mobile Header -->
             <div class="lg:hidden bg-red-700 text-white p-4 flex justify-between items-center shadow-md shrink-0">
@@ -88,16 +94,13 @@
                 <span id="cartCountDesktop" class="bg-red-200 text-red-800 text-xs font-bold px-2 py-1 rounded-full">0 รายการ</span>
             </div>
 
-            <!-- Cart Items List -->
             <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3 bg-white">
-                <!-- Empty State -->
                 <div class="h-full flex flex-col items-center justify-center text-gray-400 opacity-60">
                     <i class="fas fa-utensils text-6xl mb-4"></i>
                     <p>ยังไม่มีรายการ</p>
                 </div>
             </div>
 
-            <!-- Footer: Totals & Action -->
             <div class="p-5 bg-white border-t border-gray-200 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] shrink-0 pb-safe">
                 <div class="flex justify-between items-end mb-4">
                     <span class="text-gray-500 text-sm font-medium">รวมทั้งสิ้น</span>
@@ -109,7 +112,7 @@
             </div>
         </div>
 
-        <!-- 📱 Mobile Bottom Bar (Visible only on Mobile when items in cart) -->
+        <!-- Mobile Bottom Bar -->
         <div id="mobileBottomBar" onclick="toggleCart(true)" class="lg:hidden fixed bottom-4 left-4 right-4 bg-gray-900 text-white p-4 rounded-2xl shadow-2xl flex justify-between items-center z-20 cursor-pointer transform transition-all duration-300 translate-y-[150%] active:scale-95 border border-gray-700/50 backdrop-blur-md bg-opacity-95">
             <div class="flex items-center gap-3">
                 <div class="bg-red-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-lg ring-2 ring-red-900" id="mobileCartCount">0</div>
@@ -124,9 +127,9 @@
         </div>
     </div>
 
-    <!-- ================= MODALS & ALERTS ================= -->
+    <!-- ================= MODALS ================= -->
 
-    <!-- Custom Toast Notification -->
+    <!-- Toast -->
     <div id="toast" class="fixed top-5 right-5 z-[100] transform transition-all duration-300 translate-x-[150%] bg-white border-l-4 border-green-500 shadow-2xl rounded-lg p-4 flex items-center gap-3 min-w-[300px]">
         <div class="bg-green-100 text-green-600 rounded-full w-8 h-8 flex items-center justify-center shrink-0"><i class="fas fa-check"></i></div>
         <div>
@@ -135,7 +138,7 @@
         </div>
     </div>
 
-    <!-- Custom Alert Modal -->
+    <!-- Custom Alert -->
     <div id="customAlert" class="fixed inset-0 z-[100] bg-black/70 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-pop">
             <div id="alertIcon" class="text-5xl mb-4"></div>
@@ -145,7 +148,7 @@
         </div>
     </div>
 
-    <!-- Spicy Selection Modal -->
+    <!-- Spicy Modal -->
     <div id="spicySelectionModal" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden animate-pop">
             <div class="bg-red-600 p-4 text-white text-center">
@@ -170,7 +173,6 @@
             </div>
             <div class="p-6 overflow-y-auto flex-1">
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4 max-h-40 overflow-y-auto" id="summaryList"></div>
-                
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -200,7 +202,7 @@
         </div>
     </div>
 
-    <!-- Kitchen Modal (Full Screen on Mobile) -->
+    <!-- Kitchen Modal -->
     <div id="kitchenModal" class="fixed inset-0 bg-gray-100 hidden z-50 flex flex-col animate-slide-up">
         <div class="bg-orange-600 p-4 text-white flex justify-between items-center shadow-md shrink-0">
             <h3 class="font-bold text-lg"><i class="fas fa-fire mr-2"></i>หน้าจอครัว (Kitchen)</h3>
@@ -248,7 +250,7 @@
         </div>
     </div>
 
-    <!-- Edit/Add Menu Modals (Reusable Style) -->
+    <!-- Edit/Add Menu Modals -->
     <div id="editMenuModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-pop">
             <div class="bg-yellow-500 p-4 flex justify-between items-center text-white">
@@ -288,7 +290,7 @@
     <!-- Other modals -->
     <div id="salesModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-pop"><div class="bg-blue-600 p-4 text-white flex justify-between items-center"><h3 class="font-bold">ยอดขาย</h3><button onclick="closeModal('salesModal')"><i class="fas fa-times"></i></button></div><div class="p-6 space-y-4"><div class="bg-blue-50 p-4 rounded-xl text-center border border-blue-100"><p class="text-gray-500 text-xs uppercase font-bold">วันนี้</p><h2 class="text-4xl font-bold text-blue-600 mt-1" id="saleToday">...</h2></div><div class="grid grid-cols-2 gap-4"><div class="bg-gray-50 p-3 rounded-xl text-center"><p class="text-xs text-gray-400">เมื่อวาน</p><h3 class="font-bold text-gray-700" id="saleYest">...</h3></div><div class="bg-gray-50 p-3 rounded-xl text-center"><p class="text-xs text-gray-400">เดือนนี้</p><h3 class="font-bold text-gray-700" id="saleMonth">...</h3></div></div></div></div></div>
     
-    <!-- 🔴 HISTORY MODAL (FIXED) -->
+    <!-- History Modal -->
     <div id="historyModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl h-[80vh] flex flex-col animate-pop">
             <div class="bg-gray-800 p-4 text-white flex justify-between items-center">
@@ -306,7 +308,7 @@
         </div>
     </div>
 
-    <!-- 🔴 BILL DETAIL MODAL (RESTORED) -->
+    <!-- Bill Detail Modal -->
     <div id="billDetailModal" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-pop border border-gray-200">
             <div class="bg-gray-800 p-4 text-white flex justify-between items-center">
@@ -335,8 +337,19 @@
         let currentOrders = [];
         let currentPayOrder = null;
         let pendingItemIndex = null; 
-        let historyBills = []; // 🔴 Added for Bill Details
+        let historyBills = [];
         const categories = ['ส้มตำ', 'ยำ/ลาบ', 'ของทอด/ย่าง', 'ต้ม/แกง', 'เครื่องดื่ม', 'อื่นๆ'];
+
+        // --- 🔊 Voice System (Added Back) ---
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Cancel previous speech
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'th-TH';
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
 
         // --- UI Helpers ---
         function showToast(msg, type='success') {
@@ -449,14 +462,12 @@
             
             if (show) {
                 panel.classList.remove('hidden');
-                panel.classList.add('flex', 'fixed', 'inset-0', 'z-50'); // Force Full Screen on mobile trigger
-                mobileBar.classList.add('translate-y-[150%]'); // Hide bar
+                panel.classList.add('flex', 'fixed', 'inset-0', 'z-50'); 
+                mobileBar.classList.add('translate-y-[150%]'); 
             } else {
-                // Close Drawer
-                if(window.innerWidth < 1024) { // Mobile only
+                if(window.innerWidth < 1024) { 
                     panel.classList.add('hidden');
                     panel.classList.remove('flex', 'fixed', 'inset-0', 'z-50');
-                    // Show bar if items exist
                     if(cart.length > 0) mobileBar.classList.remove('translate-y-[150%]');
                 }
             }
@@ -464,7 +475,6 @@
 
         function addToCart(index) {
             const item = menuData[index];
-            // Simple check for non-spicy categories
             if(['ของทอด/ย่าง', 'เครื่องดื่ม', 'อื่นๆ', 'ของหวาน'].includes(item.category)) {
                 addItemToCart(item, "-");
             } else {
@@ -482,13 +492,12 @@
         }
 
         function addItemToCart(item, spicy) {
+            speak(item.name + " " + item.price + " บาท"); // 🔊 Speak
             const existing = cart.find(c => c.id === item.id && c.spicy === spicy);
             if (existing) existing.qty++;
             else cart.push({ ...item, qty: 1, spicy });
             
             renderCart();
-            
-            // Feedback
             if(window.navigator.vibrate) window.navigator.vibrate(50);
         }
 
@@ -498,7 +507,6 @@
             const btn = document.getElementById('btnOrder');
             const countEl = document.getElementById('cartCountDesktop');
             
-            // Mobile elements
             const mobileBar = document.getElementById('mobileBottomBar');
             const mobileCount = document.getElementById('mobileCartCount');
             const mobileTotal = document.getElementById('mobileCartTotal');
@@ -542,11 +550,9 @@
             countEl.innerText = count + " รายการ";
             btn.disabled = false;
 
-            // Mobile Bar Update
             mobileCount.innerText = count;
             mobileTotal.innerText = totalTxt;
             
-            // Show Mobile Bar if hidden and not in drawer mode
             const isDrawerOpen = !document.getElementById('cartPanel').classList.contains('hidden');
             if (!isDrawerOpen && window.innerWidth < 1024) {
                  mobileBar.classList.remove('translate-y-[150%]');
@@ -583,9 +589,10 @@
             .then(data => {
                 if(data.result === 'success') {
                     showToast('ส่งออเดอร์เข้าครัวแล้ว!');
+                    speak("รับรายการแล้วค่ะ"); // 🔊 Speak
                     cart = [];
                     renderCart();
-                    toggleCart(false); // Close drawer on mobile
+                    toggleCart(false); 
                     closeModal('confirmOrderModal');
                     document.getElementById('tableNo').value = '';
                     document.getElementById('orderNote').value = '';
@@ -613,7 +620,7 @@
                         badge.classList.add('hidden');
                     }
                 }
-            }).catch(e=>{}); // Silent fail
+            }).catch(e=>{}); 
         }
 
         function openKitchenModal() {
@@ -631,7 +638,7 @@
                 if (data.result === 'success') {
                     currentOrders = data.data;
                     renderKitchen(currentOrders);
-                    updateKitchenBadge(); // Sync badge
+                    updateKitchenBadge();
                 } else {
                     grid.innerHTML = `<div class="col-span-full text-center text-red-500">Error: ${data.error}</div>`;
                 }
@@ -699,6 +706,7 @@
             document.getElementById('inputReceived').value = '';
             document.getElementById('changeDisplay').innerText = '0.00';
             document.getElementById('btnConfirmPay').disabled = true;
+            speak("ยอดรวม " + currentPayOrder.totalPrice + " บาท"); // 🔊 Speak
         }
 
         function addMoney(amount) {
@@ -721,6 +729,7 @@
                 display.classList.replace('text-red-500', 'text-green-500');
                 btn.disabled = false;
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                if(change > 0) speak("เงินทอน " + change + " บาท"); // 🔊 Speak Change
             } else {
                 display.innerText = "ขาด " + Math.abs(change).toLocaleString();
                 display.classList.replace('text-green-500', 'text-red-500');
@@ -748,6 +757,7 @@
             .then(data => {
                 if(data.result === 'success') {
                     showToast('ชำระเงินเรียบร้อย');
+                    speak("ขอบคุณค่ะ"); // 🔊 Speak
                     closeModal('paymentModal');
                     fetchOrders();
                 }
@@ -768,13 +778,12 @@
             });
         }
 
-        // 🔴 FIXED: History Modal Logic
         function openHistoryModal() {
              document.getElementById('historyModal').classList.remove('hidden');
              document.getElementById('historyList').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-400">กำลังโหลด...</td></tr>';
              fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "getHistory" }) }).then(r=>r.json()).then(d => {
                  if(d.result === 'success') {
-                     historyBills = d.data; // Store data for detailed view
+                     historyBills = d.data; 
                      document.getElementById('historyList').innerHTML = d.data.map((b, index) => `
                         <tr onclick="openBillDetail(${index})" class="hover:bg-gray-50 transition cursor-pointer">
                             <td class="p-3 font-mono text-xs text-gray-400">${b.billId.substring(4,10)}...</td>
@@ -786,7 +795,6 @@
              });
         }
 
-        // 🔴 FIXED: Bill Detail Logic
         function openBillDetail(index) {
             const bill = historyBills[index];
             const modal = document.getElementById('billDetailModal');
@@ -841,14 +849,12 @@
                     </div>
                 </div>
             `;
-            
             modal.classList.remove('hidden');
         }
 
         document.getElementById('editMenuForm').addEventListener('submit', function(e) {
             e.preventDefault();
             setLoading('btnEditSave', true, 'กำลังบันทึก...');
-            // ... (Logic same as before just shorter here for brevity)
             const payload = { action: "editMenu", id: document.getElementById('eId').value, name: document.getElementById('eName').value, price: document.getElementById('ePrice').value, category: document.getElementById('eCategory').value, spicy: "-" };
             fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()).then(d=>{ 
                 if(d.result==='success') { showToast('แก้ไขสำเร็จ'); closeModal('editMenuModal'); fetchMenu(); }
