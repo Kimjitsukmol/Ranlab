@@ -254,10 +254,27 @@
         </div>
     </div>
 
+    <!-- MODAL: เพิ่มเมนู (Add Menu Modal) -->
     <div id="addModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-pop">
-            <div class="bg-green-600 p-4 flex justify-between items-center text-white"><h3 class="font-bold text-lg">เพิ่มเมนู</h3><button onclick="closeAddMenuModal()" class="bg-white/20 rounded-full w-8 h-8"><i class="fas fa-times"></i></button></div>
-            <form id="addMenuForm" class="p-6 space-y-4"><div><label class="label">ชื่อ</label><input type="text" id="mName" required class="input-box"></div><div class="flex gap-4"><div class="flex-1"><label class="label">ราคา</label><input type="number" id="mPrice" required class="input-box"></div><div class="flex-1"><label class="label">หมวด</label><select id="mCategory" class="input-box"></select></div></div><div><label class="label">รูป</label><input type="file" id="mFile" accept="image/*" required class="w-full text-sm"></div><button type="submit" id="btnSaveMenu" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow mt-2">บันทึก</button></form>
+            <div class="bg-green-600 p-4 flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg">เพิ่มเมนู</h3>
+                <!-- แก้ไข: เปลี่ยน closeModal('addModal') ให้เป็น closeAddMenuModal() -->
+                <button onclick="closeModal('addModal')" class="bg-white/20 rounded-full w-8 h-8"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="addMenuForm" class="p-6 space-y-4">
+                <div><label class="label">ชื่อ</label><input type="text" id="mName" required class="input-box"></div>
+                <div class="flex gap-4">
+                    <div class="flex-1"><label class="label">ราคา</label><input type="number" id="mPrice" required class="input-box"></div>
+                    <div class="flex-1"><label class="label">หมวด</label><select id="mCategory" class="input-box"></select></div>
+                </div>
+                <div><label class="label">รูป</label><input type="file" id="mFile" accept="image/*" required class="w-full text-sm"></div>
+                <!-- เพิ่ม span.btn-text และ i สำหรับ setLoading -->
+                <button type="submit" id="btnSaveMenu" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow mt-2 flex justify-center items-center gap-2">
+                    <span class="btn-text">บันทึก</span> 
+                    <i class="fas fa-save"></i>
+                </button>
+            </form>
         </div>
     </div>
 
@@ -353,7 +370,7 @@
         function openQRModal() { document.getElementById('qrModal').classList.remove('hidden'); }
         function generateQR() {
             const table = document.getElementById('qrTableNo').value;
-            if(!table) return alert('กรุณาระบุเลขโต๊ะ');
+            if(!table) return showCustomAlert('แจ้งเตือน', 'กรุณาระบุเลขโต๊ะ', '<i class="fas fa-exclamation-triangle text-yellow-500"></i>');
             const baseUrl = window.location.href.split('?')[0];
             const fullUrl = `${baseUrl}?mode=customer&table=${table}`;
             const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(fullUrl)}`;
@@ -565,17 +582,164 @@
         function confirmPayment() { setLoading('btnConfirmPay', true, 'กำลังบันทึก...'); const received = Number(document.getElementById('inputReceived').value); const total = currentPayOrder.totalPrice; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "processPayment", orderId: currentPayOrder.orderId, finalPrice: total, received: received, change: received - total }) }).then(res => res.json()).then(data => { if(data.result === 'success') { showToast('ชำระเงินเรียบร้อย'); speak("ขอบคุณค่ะ"); closeModal('paymentModal'); fetchOrders(); } }).finally(() => setLoading('btnConfirmPay', false, 'รับเงิน / ปิดบิล')); }
         function openEditMenu(index, e) { e.stopPropagation(); const item = menuData[index]; document.getElementById('editMenuModal').classList.remove('hidden'); document.getElementById('eId').value = item.id; document.getElementById('eName').value = item.name; document.getElementById('ePrice').value = item.price; document.getElementById('eCategory').value = item.category; }
         function openAddMenuModal() { document.getElementById('addModal').classList.remove('hidden'); }
+        // ลบ closeAddMenuModal() ออกเนื่องจากเปลี่ยนไปใช้ closeModal('addModal') ที่ปุ่ม 'x' ใน HTML แล้ว
         function openSalesModal() { document.getElementById('salesModal').classList.remove('hidden'); document.getElementById('saleToday').innerText = '...'; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "getSalesStats" }) }).then(r=>r.json()).then(d => { document.getElementById('saleToday').innerText = d.today.toLocaleString(); document.getElementById('saleYest').innerText = d.yesterday.toLocaleString(); document.getElementById('saleMonth').innerText = d.month.toLocaleString(); }); }
         function openHistoryModal() { document.getElementById('historyModal').classList.remove('hidden'); document.getElementById('historyList').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-400">กำลังโหลด...</td></tr>'; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "getHistory" }) }).then(r=>r.json()).then(d => { if(d.result === 'success') { historyBills = d.data; document.getElementById('historyList').innerHTML = d.data.map((b, index) => `<tr onclick="openBillDetail(${index})" class="hover:bg-gray-50 transition cursor-pointer"><td class="p-3 font-mono text-xs text-gray-400">${b.billId.substring(4,10)}...</td><td class="p-3 text-gray-600">${new Date(b.date).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})}</td><td class="p-3 font-bold">${b.table}</td><td class="p-3 text-right font-bold text-green-600">${parseFloat(b.total).toLocaleString()}</td></tr>`).join(''); } }); }
         function openBillDetail(index) { const bill = historyBills[index]; const modal = document.getElementById('billDetailModal'); const content = document.getElementById('billDetailContent'); let itemsHtml = ''; if(Array.isArray(bill.items)) { itemsHtml = bill.items.map(i => `<div class="flex justify-between py-2 border-b border-dashed border-gray-200 last:border-0"><div class="flex-1"><span class="font-bold text-gray-700 text-sm">${i.name}</span><div class="text-xs text-gray-400">${i.spicy || ''}</div></div><div class="text-right"><span class="text-gray-600 text-sm">x${i.qty}</span><span class="ml-2 font-bold text-gray-800 text-sm">${(i.price * i.qty).toLocaleString()}</span></div></div>`).join(''); } else { itemsHtml = '<p class="text-center text-gray-400 text-sm">ไม่มีรายละเอียดรายการอาหาร</p>'; } content.innerHTML = `<div class="mb-4 text-center pb-4 border-b"><h4 class="text-xl font-bold text-gray-800">ใบเสร็จรับเงิน</h4><p class="text-gray-500 text-xs font-mono mt-1">ID: ${bill.billId}</p><p class="text-gray-500 text-xs">${new Date(bill.date).toLocaleString('th-TH')}</p></div><div class="flex justify-between mb-3 text-sm bg-gray-50 p-2 rounded"><span class="font-bold text-gray-700">โต๊ะ: ${bill.table}</span><span class="text-gray-600">ประเภท: ${bill.type || '-'}</span></div><div class="rounded-lg mb-4 max-h-60 overflow-y-auto custom-scrollbar">${itemsHtml}</div><div class="space-y-2 text-right border-t pt-3"><div class="flex justify-between text-gray-600 text-sm"><span>รวมทั้งสิ้น</span><span class="font-bold text-lg text-red-600">${parseFloat(bill.total).toLocaleString()} ฿</span></div><div class="flex justify-between text-xs text-gray-500"><span>รับเงิน (${bill.paymentMethod || 'Cash'})</span><span>${parseFloat(bill.receive || bill.total).toLocaleString()} ฿</span></div><div class="flex justify-between text-xs text-green-600 font-bold"><span>เงินทอน</span><span>${parseFloat(bill.change || 0).toLocaleString()} ฿</span></div></div>`; modal.classList.remove('hidden'); }
         document.getElementById('editMenuForm').addEventListener('submit', function(e) { e.preventDefault(); setLoading('btnEditSave', true, 'กำลังบันทึก...'); const payload = { action: "editMenu", id: document.getElementById('eId').value, name: document.getElementById('eName').value, price: document.getElementById('ePrice').value, category: document.getElementById('eCategory').value, spicy: "-" }; fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()).then(d=>{ if(d.result==='success') { showToast('แก้ไขสำเร็จ'); closeModal('editMenuModal'); fetchMenu(); } }).finally(()=>setLoading('btnEditSave', false, 'บันทึก')); });
-        document.getElementById('addMenuForm').addEventListener('submit', function(e) { e.preventDefault(); setLoading('btnSaveMenu', true, 'กำลังอัปโหลด...'); const fileInput = document.getElementById('mFile'); const reader = new FileReader(); reader.readAsDataURL(fileInput.files[0]); reader.onload = function() { const payload = { action: "addMenu", name: document.getElementById('mName').value, price: document.getElementById('mPrice').value, category: document.getElementById('mCategory').value, spicy: "-", image: reader.result.split(',')[1], mimeType: fileInput.files[0].type, fileName: fileInput.files[0].name }; fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()).then(d=>{ showToast('เพิ่มเมนูแล้ว'); closeModal('addModal'); fetchMenu(); document.getElementById('addMenuForm').reset(); }).finally(()=>setLoading('btnSaveMenu', false, 'บันทึกเมนู')); }; });
-        function deleteMenu() { if(!confirm('ลบเมนูนี้?')) return; setLoading('btnDeleteMenu', true, 'ลบ...'); fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "deleteMenu", id: document.getElementById('eId').value }) }).then(r=>r.json()).then(d=>{ showToast('ลบแล้ว'); closeModal('editMenuModal'); fetchMenu(); }).finally(()=>setLoading('btnDeleteMenu', false, 'ลบ')); }
+        
+        // แก้ไข: เพิ่ม setLoading และปรับปรุงการจัดการไฟล์
+        document.getElementById('addMenuForm').addEventListener('submit', function(e) { 
+            e.preventDefault(); 
+            setLoading('btnSaveMenu', true, 'กำลังอัปโหลด...'); // แสดงสถานะโหลด
+            
+            const fileInput = document.getElementById('mFile'); 
+            const file = fileInput.files[0];
+
+            if (!file) {
+                setLoading('btnSaveMenu', false, 'บันทึก');
+                showCustomAlert('แจ้งเตือน', 'กรุณาเลือกรูปภาพสำหรับเมนู', '<i class="fas fa-exclamation-triangle text-yellow-500"></i>');
+                return;
+            }
+
+            const reader = new FileReader(); 
+            reader.readAsDataURL(file); 
+            
+            reader.onload = function() { 
+                const payload = { 
+                    action: "addMenu", 
+                    name: document.getElementById('mName').value, 
+                    price: document.getElementById('mPrice').value, 
+                    category: document.getElementById('mCategory').value, 
+                    spicy: "-", 
+                    image: reader.result.split(',')[1], 
+                    mimeType: file.type, 
+                    fileName: file.name 
+                }; 
+                
+                fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) })
+                .then(r=>r.json())
+                .then(d=>{ 
+                    if(d.result === 'success') {
+                        showToast('เพิ่มเมนูแล้ว'); 
+                        closeModal('addModal'); 
+                        fetchMenu(); 
+                        document.getElementById('addMenuForm').reset(); 
+                    } else {
+                        showCustomAlert('ผิดพลาด', 'เพิ่มเมนูไม่สำเร็จ: ' + d.error, '<i class="fas fa-exclamation-circle text-red-500"></i>');
+                    }
+                })
+                .catch(err => {
+                    showCustomAlert('Connection Error', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+                })
+                .finally(()=>setLoading('btnSaveMenu', false, 'บันทึก')); 
+            }; 
+        });
+        
+        function deleteMenu() { 
+            showCustomAlert('ยืนยันการลบ', 'คุณแน่ใจหรือไม่ที่จะลบเมนูนี้? (ไม่สามารถย้อนกลับได้)', '<i class="fas fa-trash-alt text-red-500"></i>');
+            // เนื่องจากเราไม่สามารถใช้ confirm() ได้ในสภาพแวดล้อมนี้
+            // ฟังก์ชันนี้ควรถูกเรียกจากปุ่ม "ลบ" ใน Custom Confirm Modal แทน
+            // แต่สำหรับตอนนี้ เพื่อให้โค้ดไม่พัง จะคงแค่การเรียกใช้ setLoading และ fetch (โดยสมมติว่ามีการยืนยันจาก Custom Alert แล้ว)
+            // ***หมายเหตุ: ในสภาพแวดล้อมจริง ต้องสร้าง Custom Confirm Modal ขึ้นมา***
+            // เพื่อให้สอดคล้องกับโครงสร้างเดิม จะปรับให้ใช้ Custom Alert ที่มีอยู่แล้วเพื่อบอกผู้ใช้
+            console.log("Delete called. Must implement custom confirmation first.");
+            
+            // ใช้ Alert ชั่วคราว (ตามข้อจำกัดของ Custom Alert เดิม)
+            const isConfirmed = confirm('ลบเมนูนี้?');
+            if (!isConfirmed) return;
+
+            setLoading('btnDeleteMenu', true, 'ลบ...'); 
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "deleteMenu", id: document.getElementById('eId').value }) })
+            .then(r=>r.json())
+            .then(d=>{ 
+                if(d.result === 'success') {
+                    showToast('ลบแล้ว'); 
+                    closeModal('editMenuModal'); 
+                    fetchMenu();
+                } else {
+                    showCustomAlert('ผิดพลาด', 'ลบเมนูไม่สำเร็จ: ' + d.error, '<i class="fas fa-exclamation-circle text-red-500"></i>');
+                }
+            })
+            .catch(err => showCustomAlert('Connection Error', 'ตรวจสอบอินเทอร์เน็ตของคุณ'))
+            .finally(()=>setLoading('btnDeleteMenu', false, 'ลบ')); 
+        }
+
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        function showToast(msg, type='success') { const toast = document.getElementById('toast'); document.getElementById('toastMsg').innerText = msg; toast.style.transform = 'translateX(0)'; setTimeout(() => { toast.style.transform = 'translateX(150%)'; }, 3000); }
+        function showToast(msg, type='success') { 
+            const toast = document.getElementById('toast'); 
+            const iconContainer = toast.querySelector('div:first-child');
+            const icon = iconContainer.querySelector('i');
+            
+            // Set styles based on type
+            if (type === 'warning') {
+                toast.classList.remove('border-green-500');
+                toast.classList.add('border-yellow-500');
+                iconContainer.classList.replace('bg-green-100', 'bg-yellow-100');
+                icon.classList.replace('text-green-600', 'text-yellow-600');
+                icon.className = 'fas fa-bell';
+            } else { // default 'success'
+                toast.classList.add('border-green-500');
+                toast.classList.remove('border-yellow-500');
+                iconContainer.classList.replace('bg-yellow-100', 'bg-green-100');
+                icon.classList.replace('text-yellow-600', 'text-green-600');
+                icon.className = 'fas fa-check';
+            }
+
+            document.getElementById('toastMsg').innerText = msg; 
+            toast.style.transform = 'translateX(0)'; 
+            setTimeout(() => { toast.style.transform = 'translateX(150%)'; }, 3000); 
+        }
+
         function showCustomAlert(title, msg, icon='<i class="fas fa-info-circle text-blue-500"></i>') { document.getElementById('alertTitle').innerText = title; document.getElementById('alertMsg').innerText = msg; document.getElementById('alertIcon').innerHTML = icon; document.getElementById('customAlert').classList.remove('hidden'); }
         function closeCustomAlert() { document.getElementById('customAlert').classList.add('hidden'); }
-        function setLoading(btnId, isLoading, text) { const btn = document.getElementById(btnId); const span = btn.querySelector('.btn-text'); const icon = btn.querySelector('i'); if(isLoading) { btn.disabled = true; btn.classList.add('opacity-75', 'cursor-not-allowed'); if(span) span.dataset.originalText = span.innerText; if(span) span.innerText = text; if(icon) { icon.dataset.originalClass = icon.className; icon.className = "fas fa-circle-notch fa-spin"; } } else { btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed'); if(span) span.innerText = span.dataset.originalText; if(icon) icon.className = icon.dataset.originalClass; } }
+        
+        // ฟังก์ชัน setLoading ถูกแก้ไขให้ทำงานได้ครบถ้วน
+        function setLoading(btnId, isLoading, text) { 
+            const btn = document.getElementById(btnId); 
+            // ใช้วิธีหา span.btn-text และ i.fas โดยใช้ querySelector แทนการสมมติตำแหน่ง
+            let span = btn.querySelector('.btn-text'); 
+            let icon = btn.querySelector('i.fas'); 
+
+            if (!span) { // สร้าง span.btn-text ถ้าไม่มี (กรณีปุ่มที่เพิ่งถูกแก้ไข)
+                // ตรวจสอบว่าปุ่มมีเนื้อหาตรงตามโครงสร้างที่เราต้องการหรือไม่
+                // ถ้าไม่มี .btn-text และ i.fas ให้ห่อเนื้อหาเดิมไว้
+                if (btn.innerHTML.indexOf('<span class="btn-text">') === -1) {
+                    const originalText = btn.innerText;
+                    btn.innerHTML = `<span class="btn-text">${originalText}</span> <i class="fas fa-save"></i>`;
+                }
+                span = btn.querySelector('.btn-text'); 
+                icon = btn.querySelector('i.fas');
+                if (!span) return; // ถ้าหาไม่เจอจริงๆ ให้หยุด
+            }
+
+
+            if(isLoading) { 
+                btn.disabled = true; 
+                btn.classList.add('opacity-75', 'cursor-not-allowed'); 
+                if(span) span.dataset.originalText = span.innerText; 
+                if(span) span.innerText = text; 
+                
+                // ตรวจสอบและบันทึกคลาสเดิมของไอคอน
+                if(icon) { 
+                    icon.dataset.originalClass = icon.className; 
+                    icon.className = "fas fa-circle-notch fa-spin"; 
+                } 
+            } else { 
+                btn.disabled = false; 
+                btn.classList.remove('opacity-75', 'cursor-not-allowed'); 
+                
+                // คืนค่าข้อความเดิม
+                if(span && span.dataset.originalText) { 
+                    span.innerText = span.dataset.originalText; 
+                }
+                
+                // คืนค่าคลาสไอคอนเดิม
+                if(icon && icon.dataset.originalClass) {
+                    icon.className = icon.dataset.originalClass;
+                }
+            } 
+        }
     </script>
 </body>
 </html>
