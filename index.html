@@ -177,6 +177,20 @@
             <button onclick="closeCustomAlert()" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-3 rounded-xl font-bold">ตกลง</button>
         </div>
     </div>
+    
+    <!-- Custom Action Confirmation Modal (New) -->
+    <div id="confirmActionModal" class="fixed inset-0 z-[110] bg-black/70 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-pop">
+            <div id="confirmActionIcon" class="text-5xl mb-4 text-red-500"></div>
+            <h3 id="confirmActionTitle" class="text-xl font-bold text-gray-800 mb-2"></h3>
+            <p id="confirmActionMsg" class="text-gray-500 mb-6 text-sm"></p>
+            <div class="flex gap-4">
+                <button onclick="closeModal('confirmActionModal')" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-xl font-bold transition">ยกเลิก</button>
+                <button id="btnConfirmAction" onclick="" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-bold transition">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+    <!-- End Custom Action Confirmation Modal -->
 
     <div id="spicySelectionModal" class="fixed inset-0 bg-black/60 hidden z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden animate-pop">
@@ -522,7 +536,7 @@
             .then(res => res.json())
             .then(data => {
                 if(data.result === 'success') {
-                    showToast('ส่งออเดอร์เข้าครัวแล้ว!');
+                    showToast('ส่งออเดอร์เข้าครัวแล้ว!', 'success');
                     speak("รับรายการแล้วค่ะ");
                     cart = []; renderCart(); toggleCart(false); closeModal('confirmOrderModal');
                     if(!isCustomerMode) document.getElementById('tableNo').value = '';
@@ -573,20 +587,20 @@
         function openKitchenModal() { document.getElementById('kitchenModal').classList.remove('hidden'); fetchOrders(); }
         function fetchOrders() { const grid = document.getElementById('kitchenGrid'); grid.innerHTML = '<div class="col-span-full text-center py-20"><i class="fas fa-circle-notch fa-spin text-4xl text-orange-500"></i><p class="mt-2 text-gray-400">กำลังโหลด...</p></div>'; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "getOrders" }) }).then(res => res.json()).then(data => { if (data.result === 'success') { currentOrders = data.data; renderKitchen(currentOrders); updateKitchenBadge(); } else { grid.innerHTML = `<div class="col-span-full text-center text-red-500">Error: ${data.error}</div>`; } }); }
         function renderKitchen(orders) { const grid = document.getElementById('kitchenGrid'); grid.innerHTML = ''; if(!orders || orders.length === 0) { grid.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center text-gray-300 py-20"><i class="fas fa-check-circle text-6xl mb-4"></i><p>ไม่มีรายการค้างส่ง</p></div>'; return; } grid.innerHTML = orders.map(order => { const isServed = order.status === 'Served'; const isTakeAway = order.orderType === 'กลับบ้าน'; const cardColor = isServed ? 'bg-green-50 border-green-200' : (isTakeAway ? 'bg-blue-50 border-blue-200' : 'bg-white border-orange-100'); const statusColor = isServed ? 'text-green-600' : (isTakeAway ? 'text-blue-600' : 'text-orange-600'); return `<div class="${cardColor} border-2 rounded-2xl p-4 shadow-sm relative flex flex-col animate-slide-up"><div class="flex justify-between items-start mb-3"><div><h4 class="font-bold text-xl text-gray-800">โต๊ะ: ${order.tableNo}</h4><span class="text-xs font-bold px-2 py-0.5 rounded-full bg-white border shadow-sm ${statusColor}">${order.orderType}</span></div><div class="text-right"><div class="font-bold text-lg text-gray-800">${order.totalPrice}฿</div><div class="text-xs text-gray-400 font-mono">${new Date(order.timestamp).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})}</div></div></div>${order.note ? `<div class="bg-yellow-100 text-yellow-800 text-xs p-2 rounded-lg mb-3 font-medium"><i class="fas fa-sticky-note mr-1"></i> ${order.note}</div>` : ''}<div class="flex-1 space-y-2 mb-4 overflow-y-auto max-h-[200px]">${(order.items || []).map(i => `<div class="flex justify-between text-sm border-b border-dashed border-gray-300/50 pb-1 last:border-0"><span class="font-medium text-gray-700">${i.name} <span class="text-gray-400 text-xs">x${i.qty}</span></span><span class="text-xs text-gray-500">${i.spicy || ''}</span></div>`).join('')}</div><div class="flex gap-2 mt-auto pt-3 border-t border-gray-200/50">${!isServed ? `<button onclick="markServed('${order.orderId}', this)" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-xl font-bold text-sm shadow transition"><i class="fas fa-bell"></i> เสิร์ฟ</button>` : '<div class="flex-1 text-center text-green-600 font-bold py-2"><i class="fas fa-check"></i> เสิร์ฟแล้ว</div>'}<button onclick="openPayment('${order.orderId}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl font-bold text-sm shadow transition"><i class="fas fa-money-bill"></i> ชำระ</button></div></div>`; }).join(''); }
-        function markServed(orderId, btn) { const originalContent = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>'; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "updateOrderStatus", orderId: orderId, status: "Served" }) }).then(() => { fetchOrders(); showToast('เสิร์ฟแล้ว'); }).catch(() => { btn.disabled = false; btn.innerHTML = originalContent; }); }
+        function markServed(orderId, btn) { const originalContent = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>'; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "updateOrderStatus", orderId: orderId, status: "Served" }) }).then(() => { fetchOrders(); showToast('เสิร์ฟแล้ว', 'success'); }).catch(() => { btn.disabled = false; btn.innerHTML = originalContent; }); }
         function openPayment(orderId) { currentPayOrder = currentOrders.find(o => o.orderId === orderId); if(!currentPayOrder) return; document.getElementById('paymentModal').classList.remove('hidden'); document.getElementById('payTotalDisplay').innerText = currentPayOrder.totalPrice; document.getElementById('inputReceived').value = ''; document.getElementById('changeDisplay').innerText = '0.00'; document.getElementById('btnConfirmPay').disabled = true; speak("ยอดรวม " + currentPayOrder.totalPrice + " บาท"); }
         function addMoney(amount) { const input = document.getElementById('inputReceived'); input.value = Number(input.value) + amount; calcChange(); }
         function setExactMoney() { document.getElementById('inputReceived').value = currentPayOrder.totalPrice; calcChange(); }
         function clearMoney() { document.getElementById('inputReceived').value = ''; calcChange(); }
         function calcChange() { const total = currentPayOrder.totalPrice; const received = Number(document.getElementById('inputReceived').value); const change = received - total; const display = document.getElementById('changeDisplay'); const btn = document.getElementById('btnConfirmPay'); if(received >= total) { display.innerText = change.toLocaleString() + ' ฿'; display.classList.replace('text-red-500', 'text-green-500'); btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); if(change > 0) speak("เงินทอน " + change + " บาท"); } else { display.innerText = "ขาด " + Math.abs(change).toLocaleString(); display.classList.replace('text-green-500', 'text-red-500'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); } }
-        function confirmPayment() { setLoading('btnConfirmPay', true, 'กำลังบันทึก...'); const received = Number(document.getElementById('inputReceived').value); const total = currentPayOrder.totalPrice; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "processPayment", orderId: currentPayOrder.orderId, finalPrice: total, received: received, change: received - total }) }).then(res => res.json()).then(data => { if(data.result === 'success') { showToast('ชำระเงินเรียบร้อย'); speak("ขอบคุณค่ะ"); closeModal('paymentModal'); fetchOrders(); } }).finally(() => setLoading('btnConfirmPay', false, 'รับเงิน / ปิดบิล')); }
+        function confirmPayment() { setLoading('btnConfirmPay', true, 'กำลังบันทึก...'); const received = Number(document.getElementById('inputReceived').value); const total = currentPayOrder.totalPrice; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "processPayment", orderId: currentPayOrder.orderId, finalPrice: total, received: received, change: received - total }) }).then(res => res.json()).then(data => { if(data.result === 'success') { showToast('ชำระเงินเรียบร้อย', 'success'); speak("ขอบคุณค่ะ"); closeModal('paymentModal'); fetchOrders(); } }).finally(() => setLoading('btnConfirmPay', false, 'รับเงิน / ปิดบิล')); }
         function openEditMenu(index, e) { e.stopPropagation(); const item = menuData[index]; document.getElementById('editMenuModal').classList.remove('hidden'); document.getElementById('eId').value = item.id; document.getElementById('eName').value = item.name; document.getElementById('ePrice').value = item.price; document.getElementById('eCategory').value = item.category; }
         function openAddMenuModal() { document.getElementById('addModal').classList.remove('hidden'); }
         // ลบ closeAddMenuModal() ออกเนื่องจากเปลี่ยนไปใช้ closeModal('addModal') ที่ปุ่ม 'x' ใน HTML แล้ว
         function openSalesModal() { document.getElementById('salesModal').classList.remove('hidden'); document.getElementById('saleToday').innerText = '...'; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "getSalesStats" }) }).then(r=>r.json()).then(d => { document.getElementById('saleToday').innerText = d.today.toLocaleString(); document.getElementById('saleYest').innerText = d.yesterday.toLocaleString(); document.getElementById('saleMonth').innerText = d.month.toLocaleString(); }); }
         function openHistoryModal() { document.getElementById('historyModal').classList.remove('hidden'); document.getElementById('historyList').innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-400">กำลังโหลด...</td></tr>'; fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "getHistory" }) }).then(r=>r.json()).then(d => { if(d.result === 'success') { historyBills = d.data; document.getElementById('historyList').innerHTML = d.data.map((b, index) => `<tr onclick="openBillDetail(${index})" class="hover:bg-gray-50 transition cursor-pointer"><td class="p-3 font-mono text-xs text-gray-400">${b.billId.substring(4,10)}...</td><td class="p-3 text-gray-600">${new Date(b.date).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})}</td><td class="p-3 font-bold">${b.table}</td><td class="p-3 text-right font-bold text-green-600">${parseFloat(b.total).toLocaleString()}</td></tr>`).join(''); } }); }
         function openBillDetail(index) { const bill = historyBills[index]; const modal = document.getElementById('billDetailModal'); const content = document.getElementById('billDetailContent'); let itemsHtml = ''; if(Array.isArray(bill.items)) { itemsHtml = bill.items.map(i => `<div class="flex justify-between py-2 border-b border-dashed border-gray-200 last:border-0"><div class="flex-1"><span class="font-bold text-gray-700 text-sm">${i.name}</span><div class="text-xs text-gray-400">${i.spicy || ''}</div></div><div class="text-right"><span class="text-gray-600 text-sm">x${i.qty}</span><span class="ml-2 font-bold text-gray-800 text-sm">${(i.price * i.qty).toLocaleString()}</span></div></div>`).join(''); } else { itemsHtml = '<p class="text-center text-gray-400 text-sm">ไม่มีรายละเอียดรายการอาหาร</p>'; } content.innerHTML = `<div class="mb-4 text-center pb-4 border-b"><h4 class="text-xl font-bold text-gray-800">ใบเสร็จรับเงิน</h4><p class="text-gray-500 text-xs font-mono mt-1">ID: ${bill.billId}</p><p class="text-gray-500 text-xs">${new Date(bill.date).toLocaleString('th-TH')}</p></div><div class="flex justify-between mb-3 text-sm bg-gray-50 p-2 rounded"><span class="font-bold text-gray-700">โต๊ะ: ${bill.table}</span><span class="text-gray-600">ประเภท: ${bill.type || '-'}</span></div><div class="rounded-lg mb-4 max-h-60 overflow-y-auto custom-scrollbar">${itemsHtml}</div><div class="space-y-2 text-right border-t pt-3"><div class="flex justify-between text-gray-600 text-sm"><span>รวมทั้งสิ้น</span><span class="font-bold text-lg text-red-600">${parseFloat(bill.total).toLocaleString()} ฿</span></div><div class="flex justify-between text-xs text-gray-500"><span>รับเงิน (${bill.paymentMethod || 'Cash'})</span><span>${parseFloat(bill.receive || bill.total).toLocaleString()} ฿</span></div><div class="flex justify-between text-xs text-green-600 font-bold"><span>เงินทอน</span><span>${parseFloat(bill.change || 0).toLocaleString()} ฿</span></div></div>`; modal.classList.remove('hidden'); }
-        document.getElementById('editMenuForm').addEventListener('submit', function(e) { e.preventDefault(); setLoading('btnEditSave', true, 'กำลังบันทึก...'); const payload = { action: "editMenu", id: document.getElementById('eId').value, name: document.getElementById('eName').value, price: document.getElementById('ePrice').value, category: document.getElementById('eCategory').value, spicy: "-" }; fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()).then(d=>{ if(d.result==='success') { showToast('แก้ไขสำเร็จ'); closeModal('editMenuModal'); fetchMenu(); } }).finally(()=>setLoading('btnEditSave', false, 'บันทึก')); });
+        document.getElementById('editMenuForm').addEventListener('submit', function(e) { e.preventDefault(); setLoading('btnEditSave', true, 'กำลังบันทึก...'); const payload = { action: "editMenu", id: document.getElementById('eId').value, name: document.getElementById('eName').value, price: document.getElementById('ePrice').value, category: document.getElementById('eCategory').value, spicy: "-" }; fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(r=>r.json()).then(d=>{ if(d.result==='success') { showToast('แก้ไขสำเร็จ', 'success'); closeModal('editMenuModal'); fetchMenu(); } }).finally(()=>setLoading('btnEditSave', false, 'บันทึก')); });
         
         // แก้ไข: เพิ่ม setLoading และปรับปรุงการจัดการไฟล์
         document.getElementById('addMenuForm').addEventListener('submit', function(e) { 
@@ -621,7 +635,7 @@
                 .then(r=>r.json())
                 .then(d=>{ 
                     if(d.result === 'success') {
-                        showToast('เพิ่มเมนูแล้ว'); 
+                        showToast('เพิ่มเมนูแล้ว', 'success'); 
                         closeModal('addModal'); 
                         fetchMenu(); 
                         document.getElementById('addMenuForm').reset(); 
@@ -636,25 +650,15 @@
             }; 
         });
         
-        function deleteMenu() { 
-            showCustomAlert('ยืนยันการลบ', 'คุณแน่ใจหรือไม่ที่จะลบเมนูนี้? (ไม่สามารถย้อนกลับได้)', '<i class="fas fa-trash-alt text-red-500"></i>');
-            // เนื่องจากเราไม่สามารถใช้ confirm() ได้ในสภาพแวดล้อมนี้
-            // ฟังก์ชันนี้ควรถูกเรียกจากปุ่ม "ลบ" ใน Custom Confirm Modal แทน
-            // แต่สำหรับตอนนี้ เพื่อให้โค้ดไม่พัง จะคงแค่การเรียกใช้ setLoading และ fetch (โดยสมมติว่ามีการยืนยันจาก Custom Alert แล้ว)
-            // ***หมายเหตุ: ในสภาพแวดล้อมจริง ต้องสร้าง Custom Confirm Modal ขึ้นมา***
-            // เพื่อให้สอดคล้องกับโครงสร้างเดิม จะปรับให้ใช้ Custom Alert ที่มีอยู่แล้วเพื่อบอกผู้ใช้
-            console.log("Delete called. Must implement custom confirmation first.");
-            
-            // ใช้ Alert ชั่วคราว (ตามข้อจำกัดของ Custom Alert เดิม)
-            const isConfirmed = confirm('ลบเมนูนี้?');
-            if (!isConfirmed) return;
-
+        // ฟังก์ชันใหม่: ลอจิกการลบเมนูจริง
+        function confirmDeleteMenu() {
             setLoading('btnDeleteMenu', true, 'ลบ...'); 
+            
             fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "deleteMenu", id: document.getElementById('eId').value }) })
             .then(r=>r.json())
             .then(d=>{ 
                 if(d.result === 'success') {
-                    showToast('ลบแล้ว'); 
+                    showToast('ลบแล้ว', 'success'); 
                     closeModal('editMenuModal'); 
                     fetchMenu();
                 } else {
@@ -663,6 +667,32 @@
             })
             .catch(err => showCustomAlert('Connection Error', 'ตรวจสอบอินเทอร์เน็ตของคุณ'))
             .finally(()=>setLoading('btnDeleteMenu', false, 'ลบ')); 
+        }
+
+        // ฟังก์ชันเดิม: เรียก Modal ยืนยันแทน confirm()
+        function deleteMenu() { 
+            openConfirmActionModal(
+                'ยืนยันการลบเมนู',
+                'คุณแน่ใจหรือไม่ที่จะลบเมนูนี้? การกระทำนี้ไม่สามารถย้อนกลับได้',
+                '<i class="fas fa-trash-alt"></i>',
+                confirmDeleteMenu // ส่งฟังก์ชันที่จะดำเนินการจริงเมื่อยืนยัน
+            );
+        }
+
+        // ฟังก์ชันเปิด Modal ยืนยันการดำเนินการ
+        function openConfirmActionModal(title, msg, iconHtml, confirmHandler) {
+            document.getElementById('confirmActionTitle').innerText = title;
+            document.getElementById('confirmActionMsg').innerText = msg;
+            document.getElementById('confirmActionIcon').innerHTML = iconHtml;
+            
+            const confirmBtn = document.getElementById('btnConfirmAction');
+            // กำหนด Handler ที่จะเรียกเมื่อกดยืนยัน
+            confirmBtn.onclick = () => {
+                closeModal('confirmActionModal');
+                confirmHandler(); // เรียกฟังก์ชันที่ถูกส่งเข้ามา (confirmDeleteMenu)
+            };
+            
+            document.getElementById('confirmActionModal').classList.remove('hidden');
         }
 
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -701,18 +731,23 @@
             let span = btn.querySelector('.btn-text'); 
             let icon = btn.querySelector('i.fas'); 
 
-            if (!span) { // สร้าง span.btn-text ถ้าไม่มี (กรณีปุ่มที่เพิ่งถูกแก้ไข)
-                // ตรวจสอบว่าปุ่มมีเนื้อหาตรงตามโครงสร้างที่เราต้องการหรือไม่
-                // ถ้าไม่มี .btn-text และ i.fas ให้ห่อเนื้อหาเดิมไว้
-                if (btn.innerHTML.indexOf('<span class="btn-text">') === -1) {
+            // Logic to handle buttons that might not have the span/icon structure yet (like old delete button)
+            if (!span && btnId === 'btnDeleteMenu') { // Specifically handle delete button if it hasn't been re-rendered
+                 if (btn.innerHTML.indexOf('<span class="btn-text">') === -1) {
                     const originalText = btn.innerText;
-                    btn.innerHTML = `<span class="btn-text">${originalText}</span> <i class="fas fa-save"></i>`;
+                    btn.innerHTML = `<span class="btn-text">${originalText}</span> <i class="fas fa-trash-alt"></i>`; // Default icon for delete
                 }
                 span = btn.querySelector('.btn-text'); 
                 icon = btn.querySelector('i.fas');
-                if (!span) return; // ถ้าหาไม่เจอจริงๆ ให้หยุด
+            } else if (!span && btnId !== 'btnDeleteMenu') {
+                if (btn.innerHTML.indexOf('<span class="btn-text">') === -1) {
+                    const originalText = btn.innerText;
+                    btn.innerHTML = `<span class="btn-text">${originalText}</span> <i class="fas fa-save"></i>`; 
+                }
+                span = btn.querySelector('.btn-text'); 
+                icon = btn.querySelector('i.fas');
             }
-
+            
 
             if(isLoading) { 
                 btn.disabled = true; 
